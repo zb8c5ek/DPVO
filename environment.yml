@@ -1,10 +1,11 @@
-name: dpvo
+name: depatch
 channels:
   - pyg
   - pytorch
   - conda-forge
   - defaults
 dependencies:
+  - python=3.10.*
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
   - absl-py=1.1.0=pyhd8ed1ab_0
@@ -25,7 +26,7 @@ dependencies:
   - charset-normalizer=2.0.4=pyhd3eb1b0_0
   - click=8.1.3=py310hff52083_0
   - cryptography=37.0.1=py310h9ce1e76_0
-  - cudatoolkit=11.3.1=h2bc3f7f_2
+  - cudatoolkit=12.1
   - cycler=0.11.0=pyhd3eb1b0_0
   - dbus=1.13.18=hb2f20db_0
   - expat=2.4.4=h295c915_0
@@ -100,12 +101,11 @@ dependencies:
   - pyparsing=3.0.4=pyhd3eb1b0_0
   - pyqt=5.9.2=py310h295c915_6
   - pysocks=1.7.1=py310h06a4308_0
-  - python=3.10.0=h12debd9_5
   - python-dateutil=2.8.2=pyhd3eb1b0_0
   - python_abi=3.10=2_cp310
-  - pytorch=1.12.0=py3.10_cuda11.3_cudnn8.3.2_0
-  - pytorch-mutex=1.0=cuda
-  - pytorch-scatter=2.0.9=py310_torch_1.12.0_cu113
+  - pytorch
+  - pytorch-mutex
+  - pytorch-scatter
   - pyu2f=0.1.5=pyhd8ed1ab_0
   - qt=5.9.7=h5867ecd_1
   - readline=8.1.2=h7f8727e_1
