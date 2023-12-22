@@ -26,7 +26,6 @@ dependencies:
   - charset-normalizer=2.0.4=pyhd3eb1b0_0
   - click=8.1.3=py310hff52083_0
   - cryptography=37.0.1=py310h9ce1e76_0
-  - cudatoolkit=12.1
   - cycler=0.11.0=pyhd3eb1b0_0
   - dbus=1.13.18=hb2f20db_0
   - expat=2.4.4=h295c915_0
@@ -103,9 +102,6 @@ dependencies:
   - pysocks=1.7.1=py310h06a4308_0
   - python-dateutil=2.8.2=pyhd3eb1b0_0
   - python_abi=3.10=2_cp310
-  - pytorch
-  - pytorch-mutex
-  - pytorch-scatter
   - pyu2f=0.1.5=pyhd8ed1ab_0
   - qt=5.9.7=h5867ecd_1
   - readline=8.1.2=h7f8727e_1
@@ -121,8 +117,6 @@ dependencies:
   - tensorboard-data-server=0.6.0=py310h597c629_2
   - tensorboard-plugin-wit=1.8.1=pyhd8ed1ab_0
   - tk=8.6.12=h1ccaba5_0
-  - torchaudio=0.12.0=py310_cu113
-  - torchvision=0.13.0=py310_cu113
   - tornado=6.1=py310h7f8727e_0
   - tqdm=4.64.0=py310h06a4308_0
   - typing-extensions=4.1.1=hd3eb1b0_0
@@ -137,6 +131,11 @@ dependencies:
   - zlib=1.2.12=h7f8727e_2
   - zstd=1.5.2=ha4553b6_0
   - pip:
+    - torch==2.1.2+cu121
+    - torchaudio==2.1.2+cu121
+    - torchvision==0.16.2+cu121
+    - pytorch-mutex
+    - pytorch-scatter
     - plyfile
     - argcomplete==2.0.0
     - beautifulsoup4==4.11.1
