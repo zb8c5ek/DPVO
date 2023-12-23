@@ -1,4 +1,4 @@
-import cv2
+# import cv2
 import numpy as np
 import glob
 import os.path as osp
@@ -16,10 +16,10 @@ from dpvo.plot_utils import plot_trajectory, save_trajectory_tum_format
 
 SKIP = 0
 
-def show_image(image, t=0):
-    image = image.permute(1, 2, 0).cpu().numpy()
-    cv2.imshow('image', image / 255.0)
-    cv2.waitKey(t)
+# def show_image(image, t=0):
+#     image = image.permute(1, 2, 0).cpu().numpy()
+#     cv2.imshow('image', image / 255.0)
+#     cv2.waitKey(t)
 
 @torch.no_grad()
 def run(cfg, network, imagedir, calib, stride=1, skip=0, viz=False, timeit=False, save_reconstruction=False):

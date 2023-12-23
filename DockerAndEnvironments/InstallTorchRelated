@@ -1,0 +1,6 @@
+
+# 1. Install Pytorch and Utils
+pip3 install torch torchvision torchaudio
+
+# 2. Install
+pip install .
