@@ -162,9 +162,14 @@ datasets/TartanAir
 TartanAirResults
 thirdparty/*
 .idea
+
 movies
 colmap_process
 GX*
 /saved_trajectories
 /trajectory_plots
 datasets/
+
+*.MOV
+Pangolin
+

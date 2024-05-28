@@ -1,10 +1,11 @@
-name: dpvo
+name: depatch
 channels:
   - pyg
   - pytorch
   - conda-forge
   - defaults
 dependencies:
+  - python=3.10.*
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
   - absl-py=1.1.0=pyhd8ed1ab_0
@@ -25,7 +26,6 @@ dependencies:
   - charset-normalizer=2.0.4=pyhd3eb1b0_0
   - click=8.1.3=py310hff52083_0
   - cryptography=37.0.1=py310h9ce1e76_0
-  - cudatoolkit=11.3.1=h2bc3f7f_2
   - cycler=0.11.0=pyhd3eb1b0_0
   - dbus=1.13.18=hb2f20db_0
   - expat=2.4.4=h295c915_0
@@ -100,14 +100,8 @@ dependencies:
   - pyparsing=3.0.4=pyhd3eb1b0_0
   - pyqt=5.9.2=py310h295c915_6
   - pysocks=1.7.1=py310h06a4308_0
-  - python=3.10.0=h12debd9_5
   - python-dateutil=2.8.2=pyhd3eb1b0_0
   - python_abi=3.10=2_cp310
-#  - pytorch=1.12.0=py3.10_cuda11.3_cudnn8.3.2_0
-#  - pytorch-mutex=1.0=cuda
-#  - pytorch-scatter=2.0.9=py310_torch_1.12.0_cu113
-  - pytorch-mutex
-  - pytorch-scatter
   - pyu2f=0.1.5=pyhd8ed1ab_0
   - qt=5.9.7=h5867ecd_1
   - readline=8.1.2=h7f8727e_1
@@ -123,8 +117,6 @@ dependencies:
   - tensorboard-data-server=0.6.0=py310h597c629_2
   - tensorboard-plugin-wit=1.8.1=pyhd8ed1ab_0
   - tk=8.6.12=h1ccaba5_0
-  - torchaudio=0.12.0=py310_cu113
-  - torchvision=0.13.0=py310_cu113
   - tornado=6.1=py310h7f8727e_0
   - tqdm=4.64.0=py310h06a4308_0
   - typing-extensions=4.1.1=hd3eb1b0_0
@@ -138,26 +130,4 @@ dependencies:
   - zipp=3.8.0=pyhd8ed1ab_0
   - zlib=1.2.12=h7f8727e_2
   - zstd=1.5.2=ha4553b6_0
-  - pip:
-    - plyfile
-    - argcomplete==2.0.0
-    - beautifulsoup4==4.11.1
-    - cmake==3.22.4
-    - colorama==0.4.5
-    - evo==1.18.1
-    - filelock==3.7.1
-    - gdown==4.5.1
-    - lz4==4.0.1
-    - natsort==8.1.0
-    - opencv-python==4.6.0.66
-    - pandas==1.4.3
-    - pygments==2.12.0
-    - pytz==2022.1
-    - pyyaml==6.0
-    - rosbags==0.9.11
-    - ruamel-yaml==0.17.21
-    - ruamel-yaml-clib==0.2.6
-    - seaborn==0.11.2
-    - soupsieve==2.3.2.post1
-    - yacs==0.1.8
-    - zstandard==0.18.0
+
