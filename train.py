@@ -158,7 +158,11 @@ def train(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--name', default='bla', help='name your experiment')
+    # Make the Default Name according to date and hour
+    import datetime
+    now = datetime.datetime.now()
+    default_name = now.strftime("%Y-%m-%d_%H-%M-%S")
+    parser.add_argument('--name', default='Train-%s' % default_name, help='name your experiment')
     parser.add_argument('--ckpt', help='checkpoint to restore')
     parser.add_argument('--steps', type=int, default=240000)
     parser.add_argument('--lr', type=float, default=0.00008)
