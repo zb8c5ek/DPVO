@@ -1,0 +1,23 @@
+name: dpvo
+channels:
+  - pyg
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - mamba
+  - opencv
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=12.1
+  - yacs
+  - plyfile
+# For torch-scatter: pip install torch-scatter -f https://data.pyg.org/whl/torch-2.1.0+${CUDA}.html
+#   Page: https://github.com/rusty1s/pytorch_scatter
+# For Evo: pip install evo --upgrade --no-binary evo
+#   Page: https://github.com/MichaelGrupp/evo
+# ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+#   Fix:
+#     apt-get update
+#     apt-get install -y libgl1-mesa-glx

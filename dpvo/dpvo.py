@@ -88,6 +88,7 @@ class DPVO:
 
     def load_weights(self, network):
         # load network from checkpoint file
+        print("Loading: ", network)
         if isinstance(network, str):
             from collections import OrderedDict
             state_dict = torch.load(network)
