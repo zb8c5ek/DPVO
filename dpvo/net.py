@@ -187,9 +187,9 @@ class VONet(nn.Module):
 
         images = 2 * (images / 255.0) - 0.5
         intrinsics = intrinsics / 4.0
-        disps = disps[:, :, 1::4, 1::4].float()
+        disps = disps[:, :, 1::4, 1::4].float()     # Subsampling depth maps
 
-        fmap, gmap, imap, patches, ix = self.patchify(images, disps=disps)
+        fmap, gmap, imap, patches, ix = self.patchify(images, disps=disps) # Turn disps into patchify
 
         corr_fn = CorrBlock(fmap, gmap)
 
