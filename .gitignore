@@ -164,3 +164,6 @@ thirdparty/*
 .idea
 *.MOV
 Pangolin
+/saved_trajectories
+/trajectory_plots
+mapping.ply
