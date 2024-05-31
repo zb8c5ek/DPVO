@@ -1,0 +1,1 @@
+python demo.py --save_reconstruction --save_trajectory --plot --imagedir=movies/IMG_0482.MOV --calib=calib/iphone.txt --stride=5

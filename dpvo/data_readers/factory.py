@@ -1,18 +1,19 @@
-
 import pickle
 import os
 import os.path as osp
 
 # RGBD-Dataset
-from .tartan import TartanAir
+from .tartan import (TartanAir, TartanAirSample)
+
 
 def dataset_factory(dataset_list, **kwargs):
     """ create a combined dataset """
 
     from torch.utils.data import ConcatDataset
 
-    dataset_map = { 
-        'tartan': (TartanAir, ),
+    dataset_map = {
+        'tartan': (TartanAir,),
+        'tartan_sample': (TartanAirSample,),
     }
 
     db_list = []
