@@ -16,7 +16,7 @@ from .augmentation import RGBDAugmentor
 from .rgbd_utils import *
 
 class RGBDDataset(data.Dataset):
-    def __init__(self, name, datapath, n_frames=4, crop_size=[480,640], fmin=10.0, fmax=75.0, aug=True, sample=True):
+    def __init__(self, name, datapath, n_frames=4, crop_size=[480,640], fmin=10.0, fmax=75.0, aug=True, sample=True, FLAG_sample=False):
         """ Base class for RGBD dataset """
         self.aug = None
         self.root = datapath
@@ -36,9 +36,11 @@ class RGBDDataset(data.Dataset):
         cur_path = osp.dirname(osp.abspath(__file__))
         if not os.path.isdir(osp.join(cur_path, 'cache')):
             os.mkdir(osp.join(cur_path, 'cache'))
-        
+
+        fn_pkl = 'datasets/TartanAirSample.pickle' if FLAG_sample else 'datasets/TartanAir.pickle'
+
         self.scene_info = \
-            pickle.load(open('datasets/TartanAir.pickle', 'rb'))[0]
+            pickle.load(open(fn_pkl, 'rb'))[0]
 
         self._build_dataset_index()
                 
@@ -164,7 +166,7 @@ class RGBDDataset(data.Dataset):
         # normalize depth
         s = .7 * torch.quantile(disps, .98)
         disps = disps / s
-        poses[...,:3] *= s
+        poses[..., :3] *= s
 
         return images, poses, disps, intrinsics 
 
