@@ -15,12 +15,29 @@ from pathlib import Path
 
 from .augmentation import RGBDAugmentor
 from .rgbd_utils import *
+from tqdm import tqdm
 
 
-def adapt_
+def adapt_image_and_depth_paths_in_pkl_to_local_path(datapath, given_path_list):
+    """
+    Adapt the Image and Depth Paths in the Pickle File to Local Path
+    :param datapath: The Path to the Local Dataset
+    :param given_path_list: The Given Path List
+    :return: The Adapted Path List
+    """
+    adapted_path_list = []
+    for path in given_path_list:
+        # Replace the datasets/TartanAir/... with the Local Path
+        segments = path.split('/')
+        modified_path = datapath / Path(*segments[3:])
+        assert os.path.exists(modified_path), "The File {} Does Not Exist".format(modified_path)
+        adapted_path_list.append(modified_path)
+    return adapted_path_list
+
 
 class RGBDDataset(data.Dataset):
-    def __init__(self, name, datapath, n_frames=4, crop_size=[480,640], fmin=10.0, fmax=75.0, aug=True, sample=True, FLAG_sample=False):
+    def __init__(self, name, datapath, n_frames=4, crop_size=[480, 640], fmin=10.0, fmax=75.0, aug=True, sample=True,
+                 FLAG_sample=False):
         """ Base class for RGBD dataset """
         self.aug = None
         self.root = datapath
@@ -30,9 +47,9 @@ class RGBDDataset(data.Dataset):
         self.sample = sample
 
         self.n_frames = n_frames
-        self.fmin = fmin # exclude very easy examples
-        self.fmax = fmax # exclude very hard examples
-        
+        self.fmin = fmin  # exclude very easy examples
+        self.fmax = fmax  # exclude very hard examples
+
         if self.aug:
             self.aug = RGBDAugmentor(crop_size=crop_size)
 
@@ -42,22 +59,28 @@ class RGBDDataset(data.Dataset):
             os.mkdir(osp.join(cur_path, 'cache'))
 
         # fn_pkl = 'datasets/TartanAirSample.pickle' if FLAG_sample else 'datasets/TartanAir.pickle'
-        fn_pkl_local = datapath /'TartanAirLocal.pickle'
+        fn_pkl_local = datapath / 'TartanAirLocal.pickle'
         if os.path.exists(fn_pkl_local):
             self.scene_info = \
                 pickle.load(open(fn_pkl_local, 'rb'))[0]
         else:
-            fn_pkl_ori = datapath /'TartanAir.pickle'
+            fn_pkl_ori = datapath / 'TartanAir.pickle'
             assert os.path.exists(fn_pkl_ori), "Dataset pickle file not found"
-            scene_info = \
-                pickle.load(open(fn_pkl_ori, 'rb'))[0]
+            scene_info = pickle.load(open(fn_pkl_ori, 'rb'))[0]
             # Replace the File Name into Current Absolute Path and Assert the File Existence
-            for scene in scene_info:
-                scene_info[scene]['images'] = [self.root / Path(p) for p in scene_info[scene]['images']]
-                scene_info[scene]['depths'] = [self.root / Path(p) for p in scene_info[scene]['depths']]
+            for scene in tqdm(scene_info):
+                adapted_images_paths = adapt_image_and_depth_paths_in_pkl_to_local_path(
+                    datapath, scene_info[scene]['images'])
+                adapted_depths_paths = adapt_image_and_depth_paths_in_pkl_to_local_path(
+                    datapath, scene_info[scene]['depths'])
+                scene_info[scene]['images'] = adapted_images_paths
+                scene_info[scene]['depths'] = adapted_depths_paths
+
+            self.scene_info = scene_info
+            pickle.dump([self.scene_info], open(fn_pkl_local, 'wb'))
 
         self._build_dataset_index()
-                
+
     def _build_dataset_index(self):
         self.dataset_index = []
         for scene in self.scene_info:
@@ -79,21 +102,22 @@ class RGBDDataset(data.Dataset):
 
     def build_frame_graph(self, poses, depths, intrinsics, f=16, max_flow=256):
         """ compute optical flow distance between all pairs of frames """
+
         def read_disp(fn):
-            depth = self.__class__.depth_read(fn)[f//2::f, f//2::f]
+            depth = self.__class__.depth_read(fn)[f // 2::f, f // 2::f]
             depth[depth < 0.01] = np.mean(depth)
             return 1.0 / depth
 
         poses = np.array(poses)
         intrinsics = np.array(intrinsics) / f
-        
+
         disps = np.stack(list(map(read_disp, depths)), 0)
         d = f * compute_distance_matrix_flow(poses, disps, intrinsics)
 
         graph = {}
         for i in range(d.shape[0]):
             j, = np.where(d[i] < max_flow)
-            graph[i] = (j, d[i,j])
+            graph[i] = (j, d[i, j])
 
         return graph
 
@@ -114,7 +138,7 @@ class RGBDDataset(data.Dataset):
         d = np.random.uniform(self.fmin, self.fmax)
         s = 1
 
-        inds = [ ix ]
+        inds = [ix]
 
         while len(inds) < self.n_frames:
             # get other frames within flow threshold
@@ -150,9 +174,8 @@ class RGBDDataset(data.Dataset):
                         s *= -1
 
                     ix = ix + s
-            
-            inds += [ ix ]
 
+            inds += [ix]
 
         images, depths, poses, intrinsics = [], [], [], []
         for i in inds:
@@ -182,7 +205,7 @@ class RGBDDataset(data.Dataset):
         disps = disps / s
         poses[..., :3] *= s
 
-        return images, poses, disps, intrinsics 
+        return images, poses, disps, intrinsics
 
     def __len__(self):
         return len(self.dataset_index)
