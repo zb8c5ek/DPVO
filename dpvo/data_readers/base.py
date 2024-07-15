@@ -11,9 +11,13 @@ import random
 import json
 import pickle
 import os.path as osp
+from pathlib import Path
 
 from .augmentation import RGBDAugmentor
 from .rgbd_utils import *
+
+
+def adapt_
 
 class RGBDDataset(data.Dataset):
     def __init__(self, name, datapath, n_frames=4, crop_size=[480,640], fmin=10.0, fmax=75.0, aug=True, sample=True, FLAG_sample=False):
@@ -37,10 +41,20 @@ class RGBDDataset(data.Dataset):
         if not os.path.isdir(osp.join(cur_path, 'cache')):
             os.mkdir(osp.join(cur_path, 'cache'))
 
-        fn_pkl = 'datasets/TartanAirSample.pickle' if FLAG_sample else 'datasets/TartanAir.pickle'
-
-        self.scene_info = \
-            pickle.load(open(fn_pkl, 'rb'))[0]
+        # fn_pkl = 'datasets/TartanAirSample.pickle' if FLAG_sample else 'datasets/TartanAir.pickle'
+        fn_pkl_local = datapath /'TartanAirLocal.pickle'
+        if os.path.exists(fn_pkl_local):
+            self.scene_info = \
+                pickle.load(open(fn_pkl_local, 'rb'))[0]
+        else:
+            fn_pkl_ori = datapath /'TartanAir.pickle'
+            assert os.path.exists(fn_pkl_ori), "Dataset pickle file not found"
+            scene_info = \
+                pickle.load(open(fn_pkl_ori, 'rb'))[0]
+            # Replace the File Name into Current Absolute Path and Assert the File Existence
+            for scene in scene_info:
+                scene_info[scene]['images'] = [self.root / Path(p) for p in scene_info[scene]['images']]
+                scene_info[scene]['depths'] = [self.root / Path(p) for p in scene_info[scene]['depths']]
 
         self._build_dataset_index()
                 

@@ -23,7 +23,7 @@ import torch.nn.functional as F
 
 from dpvo.net import VONet
 from evaluate_tartan import evaluate as validate
-
+from pathlib import Path
 
 def show_image(image):
     image = image.permute(1, 2, 0).cpu().numpy()
@@ -56,7 +56,7 @@ def train(args):
     # legacy ddp code
     rank = 0
 
-    db = dataset_factory(['tartan'], datapath="/e_disk/TartanAir", n_frames=args.n_frames)
+    db = dataset_factory(['tartan'], datapath=Path("/e_disk/TartanAir"), n_frames=args.n_frames)
     # db = dataset_factory(['tartan_sample'], datapath="/d_disk/Datasets/TartanAir", n_frames=args.n_frames)
     train_loader = DataLoader(db, batch_size=1, shuffle=True, num_workers=4)
 
