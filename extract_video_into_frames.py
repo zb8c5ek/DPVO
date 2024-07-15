@@ -10,6 +10,7 @@ import os
 import pathlib
 from tqdm import tqdm
 
+
 def extract_frames(video_path: str):
     # Open the video file.
     cap = cv2.VideoCapture(video_path)

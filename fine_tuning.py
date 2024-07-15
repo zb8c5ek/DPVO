@@ -56,8 +56,8 @@ def train(args):
     # legacy ddp code
     rank = 0
 
-    # db = dataset_factory(['tartan'], datapath="datasets/TartanAir", n_frames=args.n_frames)
-    db = dataset_factory(['tartan_sample'], datapath="/d_disk/Datasets/TartanAir", n_frames=args.n_frames)
+    db = dataset_factory(['tartan'], datapath="/e_disk/TartanAir", n_frames=args.n_frames)
+    # db = dataset_factory(['tartan_sample'], datapath="/d_disk/Datasets/TartanAir", n_frames=args.n_frames)
     train_loader = DataLoader(db, batch_size=1, shuffle=True, num_workers=4)
 
     net = VONet()
