@@ -31,7 +31,7 @@ def adapt_image_and_depth_paths_in_pkl_to_local_path(datapath, given_path_list):
         segments = path.split('/')
         modified_path = datapath / Path(*segments[3:])
         assert os.path.exists(modified_path), "The File {} Does Not Exist".format(modified_path)
-        adapted_path_list.append(modified_path)
+        adapted_path_list.append(modified_path.resolve().as_posix())
     return adapted_path_list
 
 

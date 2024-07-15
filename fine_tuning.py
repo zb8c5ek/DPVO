@@ -58,7 +58,7 @@ def train(args):
 
     db = dataset_factory(['tartan'], datapath=Path("/e_disk/TartanAir"), n_frames=args.n_frames)
     # db = dataset_factory(['tartan_sample'], datapath="/d_disk/Datasets/TartanAir", n_frames=args.n_frames)
-    train_loader = DataLoader(db, batch_size=1, shuffle=True, num_workers=4)
+    train_loader = DataLoader(db, batch_size=1, shuffle=True, num_workers=1)    # Default was 4, perhaps using 1 first.
 
     net = VONet()
     net.train()
