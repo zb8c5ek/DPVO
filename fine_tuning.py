@@ -25,6 +25,7 @@ from dpvo.net import VONet
 from evaluate_tartan import evaluate as validate
 from pathlib import Path
 
+
 def show_image(image):
     image = image.permute(1, 2, 0).cpu().numpy()
     cv2.imshow('image', image / 255.0)
@@ -58,7 +59,7 @@ def train(args):
 
     db = dataset_factory(['tartan'], datapath=Path("/e_disk/TartanAir"), n_frames=args.n_frames)
     # db = dataset_factory(['tartan_sample'], datapath="/d_disk/Datasets/TartanAir", n_frames=args.n_frames)
-    train_loader = DataLoader(db, batch_size=1, shuffle=True, num_workers=1)    # Default was 4, perhaps using 1 first.
+    train_loader = DataLoader(db, batch_size=1, shuffle=True, num_workers=1)  # Default was 4, perhaps using 1 first.
 
     net = VONet()
     net.train()
@@ -79,7 +80,8 @@ def train(args):
 
     if rank == 0:
         logger = Logger(args.name, scheduler)
-
+    dp_output = Path("Runs/%s" % args.name).resolve()
+    dp_output.mkdir(parents=True)
     total_steps = 0
 
     while 1:
@@ -137,7 +139,7 @@ def train(args):
             optimizer.step()
             scheduler.step()
 
-            total_steps += 1
+            # total_steps += 1
 
             metrics = {
                 "loss": loss.item(),
@@ -154,14 +156,16 @@ def train(args):
             if rank == 0:
                 logger.push(metrics)
 
-            if total_steps % 10000 == 0:
+            if total_steps % 10000 == 0:  # Change to Eval at every 10000 iters, take about 5~6 hours to reach so.
                 torch.cuda.empty_cache()
 
                 if rank == 0:
-                    PATH = 'checkpoints/%s_%06d.pth' % (args.name, total_steps)
-                    torch.save(net.state_dict(), PATH)
+                    fp_model = dp_output / ('%s_%06d.pth' % (args.name, total_steps))
+                    torch.save(net.state_dict(), fp_model)
 
-                validation_results = validate(None, net)
+                validation_results = validate(
+                    None, net, dp_output=dp_output / ('val_%06d' % total_steps)
+                )
                 if rank == 0:
                     logger.write_dict(validation_results)
 
@@ -177,7 +181,7 @@ if __name__ == '__main__':
     now = datetime.datetime.now()
     default_name = now.strftime("%Y-%m-%d_%H-%M-%S")
     # Inherit the parameters from the training script.
-    parser.add_argument('--name', default='Tuning-%s' % default_name, help='name your experiment')
+    parser.add_argument('--name', default='Training-%s' % default_name, help='name your experiment')
     parser.add_argument('--ckpt', help='checkpoint to restore')
     parser.add_argument('--steps', type=int, default=240000)
     parser.add_argument('--lr', type=float, default=0.00008)

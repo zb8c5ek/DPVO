@@ -15,11 +15,22 @@ from dpvo.data_readers.tartan import test_split as val_split
 from dpvo.plot_utils import plot_trajectory, save_trajectory_tum_format
 
 test_split = \
-    ["MH%03d"%i for i in range(8)] + \
-    ["ME%03d"%i for i in range(8)]
+    ["MH%03d" % i for i in range(8)] + \
+    ["ME%03d" % i for i in range(8)]
 
 STRIDE = 1
 fx, fy, cx, cy = [320, 320, 320, 240]
+
+DP_TARTAN = Path("/e_disk/TartanAir")
+
+
+def adapt_scene_path_to_folder_name(datapath, val_scene_path):
+    # Replace the datasets/TartanAir/... with the Local Path
+    segments = val_scene_path.split('/')
+    modified_path = datapath / Path(*segments[-3:])
+    assert modified_path.exists(), "The File\Folder {} Does Not Exist".format(modified_path)
+
+    return modified_path.resolve()
 
 
 def show_image(image, t=0):
@@ -27,26 +38,28 @@ def show_image(image, t=0):
     cv2.imshow('image', image / 255.0)
     cv2.waitKey(t)
 
+
 def video_iterator(imagedir, ext=".png", preload=True):
     imfiles = glob.glob(osp.join(imagedir, "*{}".format(ext)))
 
     data_list = []
     for imfile in sorted(imfiles)[::STRIDE]:
-        image = torch.from_numpy(cv2.imread(imfile)).permute(2,0,1)
+        image = torch.from_numpy(cv2.imread(imfile)).permute(2, 0, 1)
         intrinsics = torch.as_tensor([fx, fy, cx, cy])
         data_list.append((image, intrinsics))
 
     for (image, intrinsics) in data_list:
         yield image.cuda(), intrinsics.cuda()
 
+
 @torch.no_grad()
 def run(imagedir, cfg, network, viz=False):
     slam = DPVO(cfg, network, ht=480, wd=640, viz=viz)
 
     for t, (image, intrinsics) in enumerate(video_iterator(imagedir)):
-        if viz: 
+        if viz:
             show_image(image, 1)
-        
+
         with Timer("SLAM", enabled=False):
             slam(t, image, intrinsics)
 
@@ -63,32 +76,32 @@ def ate(traj_ref, traj_est, timestamps):
     from evo.core.metrics import PoseRelation
 
     traj_est = PoseTrajectory3D(
-        positions_xyz=traj_est[:,:3],
-        orientations_quat_wxyz=traj_est[:,3:],
+        positions_xyz=traj_est[:, :3],
+        orientations_quat_wxyz=traj_est[:, 3:],
         timestamps=timestamps)
 
     traj_ref = PoseTrajectory3D(
-        positions_xyz=traj_ref[:,:3],
-        orientations_quat_wxyz=traj_ref[:,3:],
+        positions_xyz=traj_ref[:, :3],
+        orientations_quat_wxyz=traj_ref[:, 3:],
         timestamps=timestamps)
-    
-    result = main_ape.ape(traj_ref, traj_est, est_name='traj', 
-        pose_relation=PoseRelation.translation_part, align=True, correct_scale=True)
+
+    result = main_ape.ape(traj_ref, traj_est, est_name='traj',
+                          pose_relation=PoseRelation.translation_part, align=True, correct_scale=True)
 
     return result.stats["rmse"]
 
 
 @torch.no_grad()
-def evaluate(config, net, split="validation", trials=1, plot=False, save=False):
-
+def evaluate(config, net, dp_output=Path("TartanAirResults"), dp_tartan=DP_TARTAN, split="validation", trials=1,
+             plot=False, save=False):
     if config is None:
         config = cfg
         config.merge_from_file("config/default.yaml")
 
-    if not os.path.isdir("TartanAirResults"):
-        os.mkdir("TartanAirResults")
+    if not dp_output.exists():
+        dp_output.mkdir()
 
-    scenes = test_split if split=="test" else val_split
+    scenes = test_split if split == "test" else val_split
 
     results = {}
     all_results = []
@@ -101,15 +114,17 @@ def evaluate(config, net, split="validation", trials=1, plot=False, save=False):
             if split == 'test':
                 scene_path = os.path.join("datasets/mono", scene)
                 traj_ref = osp.join("datasets/mono", "mono_gt", scene + ".txt")
-            
+
             elif split == 'validation':
-                scene_path = os.path.join("datasets/TartanAir", scene, "image_left")
-                traj_ref = osp.join("datasets/TartanAir", scene, "pose_left.txt")
+                scene_path = (adapt_scene_path_to_folder_name(dp_tartan, scene) / "image_left").as_posix()
+                traj_ref = (adapt_scene_path_to_folder_name(dp_tartan, scene) / "pose_left.txt").as_posix()
 
             # run the slam system
-            traj_est, tstamps = run(scene_path, config, net)
+            traj_est, tstamps = run(
+                imagedir=scene_path, cfg=config, network=net, viz=False
+            )
 
-            PERM = [1, 2, 0, 4, 5, 3, 6] # ned -> xyz
+            PERM = [1, 2, 0, 4, 5, 3, 6]  # ned -> xyz
             traj_ref = np.loadtxt(traj_ref, delimiter=" ")[::STRIDE, PERM]
 
             # do evaluation
@@ -120,19 +135,22 @@ def evaluate(config, net, split="validation", trials=1, plot=False, save=False):
             if plot:
                 scene_name = '_'.join(scene.split('/')[1:]).title()
                 Path("trajectory_plots").mkdir(exist_ok=True)
-                plot_trajectory((traj_est, tstamps), (traj_ref, tstamps), f"TartanAir {scene_name.replace('_', ' ')} Trial #{j+1} (ATE: {ate_score:.03f})",
-                                f"trajectory_plots/TartanAir_{scene_name}_Trial{j+1:02d}.pdf", align=True, correct_scale=True)
+                plot_trajectory((traj_est, tstamps), (traj_ref, tstamps),
+                                f"TartanAir {scene_name.replace('_', ' ')} Trial #{j + 1} (ATE: {ate_score:.03f})",
+                                f"trajectory_plots/TartanAir_{scene_name}_Trial{j + 1:02d}.pdf", align=True,
+                                correct_scale=True)
 
             if save:
                 Path("saved_trajectories").mkdir(exist_ok=True)
-                save_trajectory_tum_format((traj_est, tstamps), f"saved_trajectories/TartanAir_{scene_name}_Trial{j+1:02d}.txt")
+                save_trajectory_tum_format((traj_est, tstamps),
+                                           f"saved_trajectories/TartanAir_{scene_name}_Trial{j + 1:02d}.txt")
 
         print(scene, sorted(results[scene]))
 
     results_dict = dict([("Tartan/{}".format(k), np.median(v)) for (k, v) in results.items()])
 
     # write output to file with timestamp
-    with open(osp.join("TartanAirResults", datetime.datetime.now().strftime('%m-%d-%I%p.txt')), "w") as f:
+    with open(dp_output / datetime.datetime.now().strftime('%m-%d-%I%p.txt'), "w") as f:
         f.write(','.join([str(x) for x in all_results]))
 
     xs = []
@@ -150,10 +168,11 @@ def evaluate(config, net, split="validation", trials=1, plot=False, save=False):
 if __name__ == '__main__':
 
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--viz', action="store_true")
     parser.add_argument('--id', type=int, default=-1)
-    parser.add_argument('--weights', default="dpvo.pth")
+    parser.add_argument('--weights', default="ckpts/dpvo.pth")
     parser.add_argument('--config', default="config/default.yaml")
     parser.add_argument('--split', default="validation")
     parser.add_argument('--trials', type=int, default=1)
@@ -173,12 +192,15 @@ if __name__ == '__main__':
         traj_est, tstamps = run(scene_path, cfg, args.weights, viz=args.viz)
 
         traj_ref = osp.join("datasets/mono", "mono_gt", test_split[args.id] + ".txt")
-        traj_ref = np.loadtxt(traj_ref, delimiter=" ")[::STRIDE,[1, 2, 0, 4, 5, 3, 6]]
+        traj_ref = np.loadtxt(traj_ref, delimiter=" ")[::STRIDE, [1, 2, 0, 4, 5, 3, 6]]
 
         # do evaluation
         print(ate(traj_ref, traj_est, tstamps))
 
     else:
-        results = evaluate(cfg, args.weights, split=args.split, trials=args.trials, plot=args.plot, save=args.save_trajectory)
+        results = evaluate(
+            cfg, args.weights,
+            split=args.split, trials=args.trials, plot=args.plot, save=args.save_trajectory
+        )
         for k in results:
             print(k, results[k])
