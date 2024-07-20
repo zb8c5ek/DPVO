@@ -134,16 +134,20 @@ def evaluate(config, net, dp_output=Path("TartanAirResults"), dp_tartan=DP_TARTA
 
             if plot:
                 scene_name = '_'.join(scene.split('/')[1:]).title()
-                Path("trajectory_plots").mkdir(exist_ok=True)
+                dp_plot = dp_output / "trajectory_plots"
+                dp_plot.mkdir(exist_ok=True)
                 plot_trajectory((traj_est, tstamps), (traj_ref, tstamps),
                                 f"TartanAir {scene_name.replace('_', ' ')} Trial #{j + 1} (ATE: {ate_score:.03f})",
-                                f"trajectory_plots/TartanAir_{scene_name}_Trial{j + 1:02d}.pdf", align=True,
+                                (dp_plot / f"TartanAir_{scene_name}_Trial{j + 1:02d}.pdf").as_posix(), align=True,
                                 correct_scale=True)
 
             if save:
-                Path("saved_trajectories").mkdir(exist_ok=True)
-                save_trajectory_tum_format((traj_est, tstamps),
-                                           f"saved_trajectories/TartanAir_{scene_name}_Trial{j + 1:02d}.txt")
+                dp_traj = dp_output / "saved_trajectories"
+                dp_traj.mkdir(exist_ok=True)
+                save_trajectory_tum_format(
+                    (traj_est, tstamps),
+                    (dp_traj / f"saved_trajectories/TartanAir_{scene_name}_Trial{j + 1:02d}.txt").as_posix()
+                )
 
         print(scene, sorted(results[scene]))
 

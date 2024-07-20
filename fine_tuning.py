@@ -22,7 +22,7 @@ from dpvo.logger import Logger
 import torch.nn.functional as F
 
 from dpvo.net import VONet
-from evaluate_tartan import evaluate as validate
+from evaluate_tartan import evaluate
 from pathlib import Path
 
 
@@ -65,12 +65,7 @@ def train(args):
     net.train()
     net.cuda()
 
-    if args.ckpt is not None:
-        state_dict = torch.load(args.ckpt)
-        new_state_dict = OrderedDict()
-        for k, v in state_dict.items():
-            new_state_dict[k.replace('module.', '')] = v
-        net.load_state_dict(new_state_dict, strict=False)
+    total_steps = 0
 
     optimizer = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=1e-6)
 
@@ -82,7 +77,25 @@ def train(args):
         logger = Logger(args.name, scheduler)
     dp_output = Path("Runs/%s" % args.name).resolve()
     dp_output.mkdir(parents=True)
-    total_steps = 0
+
+    if args.ckpt is not None:
+        state_dict = torch.load(args.ckpt)
+        fp_model = Path(args.ckpt)
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            new_state_dict[k.replace('module.', '')] = v
+        net.load_state_dict(new_state_dict, strict=False)
+        total_steps = int(args.ckpt.split('_')[-1].split('.')[0])
+        # Do a Validation at the beginning of the training
+        validation_results = evaluate(
+            None, fp_model.as_posix(), dp_output=dp_output / ('val_%06d' % total_steps),
+            plot=True, save=True
+        )
+        if rank == 0:
+            logger.write_dict(validation_results)
+
+        torch.cuda.empty_cache()
+        net.train()
 
     while 1:
         for data_blob in train_loader:
@@ -90,10 +103,10 @@ def train(args):
             optimizer.zero_grad()
 
             # fix poses to gt for first 1k steps
-            so = total_steps < 1000 and args.ckpt is None
+            structure_only = total_steps < 1000 and args.ckpt is None
 
             poses = SE3(poses).inv()
-            traj = net(images, poses, disps, intrinsics, M=1024, STEPS=18, structure_only=so)
+            traj = net(images, poses, disps, intrinsics, M=1024, STEPS=18, structure_only=structure_only)
             # TODO: the disps are used to compute traj, yet not for computing losses. hence dense-dense disp might not
             #   be necessary. also, the VO part only uses sparse patches, something might interchange here.
 
@@ -128,7 +141,7 @@ def train(args):
                 ro = e1[..., 3:6].norm(dim=-1)
 
                 loss += args.flow_weight * e.mean()
-                if not so and i >= 2:
+                if not structure_only and i >= 2:
                     loss += args.pose_weight * (tr.mean() + ro.mean())
 
             # kl is 0 (not longer used)
@@ -139,7 +152,7 @@ def train(args):
             optimizer.step()
             scheduler.step()
 
-            # total_steps += 1
+            total_steps += 1
 
             metrics = {
                 "loss": loss.item(),
@@ -156,21 +169,29 @@ def train(args):
             if rank == 0:
                 logger.push(metrics)
 
-            if total_steps % 10000 == 0:  # Change to Eval at every 10000 iters, take about 5~6 hours to reach so.
+            if total_steps % 1000 == 0:  # Change to Eval at every 10000 iters, take about 5~6 hours to reach so.
                 torch.cuda.empty_cache()
 
                 if rank == 0:
                     fp_model = dp_output / ('%s_%06d.pth' % (args.name, total_steps))
+                    # TODO: save model every 1000 steps, but VAL every 10000 steps.
                     torch.save(net.state_dict(), fp_model)
+                else:
+                    raise ValueError("Only rank 0 should save models")
 
-                validation_results = validate(
-                    None, net, dp_output=dp_output / ('val_%06d' % total_steps)
-                )
-                if rank == 0:
-                    logger.write_dict(validation_results)
+                # validation_results = validate(
+                #     None, net, dp_output=dp_output / ('val_%06d' % total_steps)
+                # )
+                if total_steps % 10000 == 0:
+                    validation_results = evaluate(
+                        None, fp_model.as_posix(), dp_output=dp_output / ('val_%06d' % total_steps),
+                        plot=True, save=True
+                    )
+                    if rank == 0:
+                        logger.write_dict(validation_results)
 
-                torch.cuda.empty_cache()
-                net.train()
+                    torch.cuda.empty_cache()
+                    net.train()
 
 
 if __name__ == '__main__':
@@ -181,7 +202,7 @@ if __name__ == '__main__':
     now = datetime.datetime.now()
     default_name = now.strftime("%Y-%m-%d_%H-%M-%S")
     # Inherit the parameters from the training script.
-    parser.add_argument('--name', default='Training-%s' % default_name, help='name your experiment')
+    parser.add_argument('--name', default='Training-from-Steps_50000-%s' % default_name, help='name your experiment')
     parser.add_argument('--ckpt', help='checkpoint to restore')
     parser.add_argument('--steps', type=int, default=240000)
     parser.add_argument('--lr', type=float, default=0.00008)
