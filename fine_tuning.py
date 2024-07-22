@@ -59,7 +59,8 @@ def train(args):
 
     db = dataset_factory(['tartan'], datapath=Path("/e_disk/TartanAir"), n_frames=args.n_frames)
     # db = dataset_factory(['tartan_sample'], datapath="/d_disk/Datasets/TartanAir", n_frames=args.n_frames)
-    train_loader = DataLoader(db, batch_size=1, shuffle=True, num_workers=1)  # Default was 4, perhaps using 1 first.
+    train_loader = DataLoader(db, batch_size=1, shuffle=True, num_workers=1)
+    # Default was 4, perhaps using 1 first => 16.8 of 47.8 GB used, in which 16 GB from the GPU are all used.
 
     net = VONet()
     net.train()
@@ -86,15 +87,16 @@ def train(args):
             new_state_dict[k.replace('module.', '')] = v
         net.load_state_dict(new_state_dict, strict=False)
         total_steps = int(args.ckpt.split('_')[-1].split('.')[0])
+        print("Restored from %s" % args.ckpt, "at step", total_steps)
         # Do a Validation at the beginning of the training
-        validation_results = evaluate(
-            None, fp_model.as_posix(), dp_output=dp_output / ('val_%06d' % total_steps),
-            plot=True, save=True
-        )
-        if rank == 0:
-            logger.write_dict(validation_results)
-
-        torch.cuda.empty_cache()
+        # validation_results = evaluate(
+        #     None, fp_model.as_posix(), dp_output=dp_output / ('val_%06d' % total_steps),
+        #     plot=True, save=True
+        # )
+        # if rank == 0:
+        #     logger.write_dict(validation_results)
+        #
+        # torch.cuda.empty_cache()
         net.train()
 
     while 1:
@@ -202,7 +204,7 @@ if __name__ == '__main__':
     now = datetime.datetime.now()
     default_name = now.strftime("%Y-%m-%d_%H-%M-%S")
     # Inherit the parameters from the training script.
-    parser.add_argument('--name', default='Training-from-Steps_50000-%s' % default_name, help='name your experiment')
+    parser.add_argument('--name', default='Training-%s' % default_name, help='name your experiment')
     parser.add_argument('--ckpt', help='checkpoint to restore')
     parser.add_argument('--steps', type=int, default=240000)
     parser.add_argument('--lr', type=float, default=0.00008)

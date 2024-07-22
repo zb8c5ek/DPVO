@@ -146,7 +146,7 @@ def evaluate(config, net, dp_output=Path("TartanAirResults"), dp_tartan=DP_TARTA
                 dp_traj.mkdir(exist_ok=True)
                 save_trajectory_tum_format(
                     (traj_est, tstamps),
-                    (dp_traj / f"saved_trajectories/TartanAir_{scene_name}_Trial{j + 1:02d}.txt").as_posix()
+                    (dp_traj / (f"TartanAir_{scene_name}_Trial{j + 1:02d}.txt")).as_posix()
                 )
 
         print(scene, sorted(results[scene]))
