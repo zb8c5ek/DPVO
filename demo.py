@@ -17,10 +17,10 @@ from dpvo.plot_utils import plot_trajectory, save_trajectory_tum_format
 SKIP = 0
 
 
-def show_image(image, t=0):
-    image = image.permute(1, 2, 0).cpu().numpy()
-    cv2.imshow('image', image / 255.0)
-    cv2.waitKey(t)
+# def show_image(image, t=0):
+#     image = image.permute(1, 2, 0).cpu().numpy()
+#     cv2.imshow('image', image / 255.0)
+#     cv2.waitKey(t)
 
 
 @torch.no_grad()
